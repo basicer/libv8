@@ -1,12 +1,14 @@
 is_debug=false
 is_component_build=false
 v8_monolithic=true
+v8_enable_sandbox=false
 
 # v8_enable_webassembly=true
 v8_enable_i18n_support=false
 v8_enable_test_features=false
 
 v8_use_external_startup_data=false
+use_thin_lto=false
 
 symbol_level=0
 strip_debug_info=true

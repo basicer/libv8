@@ -15,8 +15,9 @@ jobs:
   build-test:
     name: Build V8
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-15-intel, macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Code
@@ -45,7 +46,7 @@ jobs:
             .gclient_entries
             .gclient_previous_sync_commits
             .cipd
-          key: ${{ runner.os }}-${{ runner.arch }}:libv8:v8:${{ hashFiles('**/VERSION') }}
+          key: ${{ runner.os }}-${{ runner.arch }}:libv8:v8:${{ hashFiles('VERSION', 'args/**', 'v8_compile.*') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}:libv8:v8:
 
@@ -61,21 +62,18 @@ jobs:
 
       - name: Build V8 for Linux (${{ runner.arch }})
         if: startsWith(matrix.os, 'ubuntu')
-        continue-on-error: true
         uses: ./.github/actions/build-linux
         with:
           archive-name: ${{ env.ARCHIVE_NAME }}
 
       - name: Build V8 for macOS (${{ runner.arch }})
         if: startsWith(matrix.os, 'macos')
-        continue-on-error: true
         uses: ./.github/actions/build-macos
         with:
           archive-name: ${{ env.ARCHIVE_NAME }}
 
       - name: Build V8 for Windows
         if: startsWith(matrix.os, 'windows')
-        continue-on-error: true
         uses: ./.github/actions/build-windows
         with:
           archive-name: ${{ env.ARCHIVE_NAME }}
