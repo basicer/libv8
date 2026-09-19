@@ -1,0 +1,53 @@
+Adapted from ResurrectedTrader/v8-static-win, Invoke-SourcePatches.
+Source: https://github.com/ResurrectedTrader/v8-static-win/blob/6c2d8e9160f7f1fa8d30b5bd2087f732c5052238/build-v8.ps1
+
+--- a/src/objects/map.h
++++ b/src/objects/map.h
+@@ -1289,7 +1289,10 @@
+   static const int kStartOfStrongExtendedFieldsOffset;
+ 
+   std::atomic<uint8_t> bit_field_ex_;
+-  // Leaves kTaggedSize-1 unused bytes, they will be used by subclasses.
++  // Reserved rather than left as tail padding for subclasses: the MSVC ABI
++  // does not lower a base class's alignment for #pragma pack, so the implicit
++  // version of these bytes makes sizeof disagree with Torque's kSize.
++  uint8_t extended_base_padding_[kTaggedSize - 1];
+ } V8_OBJECT_END;
+ 
+ constexpr int ExtendedMapSizeForKind(ExtendedMapKind kind);
+--- a/src/objects/map.tq
++++ b/src/objects/map.tq
+@@ -116,7 +116,8 @@
+ @doNotGenerateCast
+ extern class ExtendedMap extends Map {
+   bit_field_ex: ExtendedMapBitFields;
+-  // Leaves kTaggedSize-1 unused bytes, they will be used by subclasses.
++  @ifnot(TAGGED_SIZE_8_BYTES) extended_base_padding[3]: uint8;
++  @if(TAGGED_SIZE_8_BYTES) extended_base_padding[7]: uint8;
+ }
+ 
+ @export
+--- a/src/objects/js-interceptor-map.h
++++ b/src/objects/js-interceptor-map.h
+@@ -41,7 +41,7 @@
+ 
+  public:
+   uint8_t flags_;
+-  uint8_t extended_padding_[kTaggedSize - 2];
++  uint8_t extended_padding_[kTaggedSize - 1];
+   TaggedMember<InterceptorInfo> named_interceptor_;
+   TaggedMember<InterceptorInfo> indexed_interceptor_;
+   TaggedMember<Cell> fast_case_validity_cell_;
+--- a/src/objects/js-interceptor-map.tq
++++ b/src/objects/js-interceptor-map.tq
+@@ -9,8 +9,8 @@
+ @doNotGenerateCast
+ extern class JSInterceptorMap extends ExtendedMap {
+   flags: uint8;
+-  @ifnot(TAGGED_SIZE_8_BYTES) extended_padding[2]: uint8;
+-  @if(TAGGED_SIZE_8_BYTES) extended_padding[6]: uint8;
++  @ifnot(TAGGED_SIZE_8_BYTES) extended_padding[3]: uint8;
++  @if(TAGGED_SIZE_8_BYTES) extended_padding[7]: uint8;
+   named_interceptor: InterceptorInfo;
+   indexed_interceptor: InterceptorInfo;
+   // This prototype validity cell guards modifications of the interceptor's

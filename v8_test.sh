@@ -11,10 +11,19 @@ fi
 
 (
   set -x
-  g++ -I"${dir}/v8" -I"${dir}/v8/include" \
+  cxx="clang++"
+  set --
+  if [ "$(uname -s)" = "Darwin" ]; then
+    set -- \
+      -framework CoreFoundation \
+      -framework Foundation \
+      -framework Security
+  fi
+
+  "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
     "${dir}/v8/samples/hello-world.cc" -o hello_world \
     -lv8_monolith -L"${dir}/v8/out/release/obj/" \
-    -pthread -std=c++20 -ldl
+    -pthread -std=c++20 -ldl "$@"
 )
 
 sh -c "./hello_world"

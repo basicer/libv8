@@ -1,0 +1,35 @@
+Adapted from ResurrectedTrader/v8-static-win, Invoke-SourcePatches.
+Source: https://github.com/ResurrectedTrader/v8-static-win/blob/6c2d8e9160f7f1fa8d30b5bd2087f732c5052238/build-v8.ps1
+
+--- a/src/sandbox/external-pointer.h
++++ b/src/sandbox/external-pointer.h
+@@ -78,7 +78,13 @@
+       "or update the NeedsCallbackRedirection specialization to support tag "
+       "ranges.");
+ 
+-  alignas(alignof(Tagged_t)) char storage_[sizeof(ExternalPointer_t)];
++  // Use natural alignment so MSVC's ABI honors V8_OBJECT's packing. An
++  // explicit alignas propagates through enclosing classes despite pack(4),
++  // adding tail padding that Torque counts but derived C++ fields can reuse.
++  union {
++    char storage_[sizeof(ExternalPointer_t)];
++    Tagged_t alignment_;
++  };
+ };
+ 
+ template <ExternalPointerTagRange kTagRange>
+@@ -122,7 +128,13 @@
+  private:
+   static Address RedirectValue(IsolateForSandbox isolate, Address value);
+ 
+-  alignas(alignof(Tagged_t)) char storage_[sizeof(ExternalPointer_t)];
++  // Use natural alignment so MSVC's ABI honors V8_OBJECT's packing. An
++  // explicit alignas propagates through enclosing classes despite pack(4),
++  // adding tail padding that Torque counts but derived C++ fields can reuse.
++  union {
++    char storage_[sizeof(ExternalPointer_t)];
++    Tagged_t alignment_;
++  };
+ };
+ 
+ // Writes the null handle or kNullAddress into the external pointer field.

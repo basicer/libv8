@@ -32,6 +32,15 @@ runs:
 
         Write-Output "SCCACHE_DIR=$sccacheDir" | Out-File -FilePath "$Env:GITHUB_ENV" -Encoding utf8
 
+    - name: Install Windows SDK Required by V8
+      shell: pwsh
+      run: |
+        winget install --id Microsoft.WindowsSDK.10.0.28000 --exact --silent --disable-interactivity --accept-package-agreements --accept-source-agreements
+        $sdkIncludeDir = 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.28000.0\um'
+        if (-not (Test-Path $sdkIncludeDir)) {
+          throw "V8 requires Windows SDK 10.0.28000.0, but $sdkIncludeDir was not installed."
+        }
+
     - name: Download V8 Source
       shell: cmd
       run: .\v8_download.bat

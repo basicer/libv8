@@ -55,6 +55,16 @@ set "gnArgs=%gnArgs% v8_target_cpu=""%targetCpu%"""
 
 pushd "%dir%\v8"
 
+rem Apply local Windows fixes after gclient sync, before generating build files.
+rem See patches\README.md for upstream attribution and patch scope.
+for %%p in ("%dir%patches\windows-*.patch") do (
+  call :apply_patch "%%~fp"
+  if errorlevel 1 (
+    popd
+    exit /b 1
+  )
+)
+
 call gn gen ".\out\release" --args="%gnArgs%"
 if errorlevel 1 (
   echo Failed to generate build files.
@@ -77,3 +87,20 @@ dir ".\out\release\obj\v8_*.lib"
 popd
 
 endlocal
+exit /b 0
+
+:apply_patch
+rem Cached source trees may already contain these changes.
+git apply --reverse --check "%~1" >nul 2>nul
+if not errorlevel 1 exit /b 0
+git apply --check "%~1"
+if errorlevel 1 (
+  echo Failed to check Windows patch: %~nx1
+  exit /b 1
+)
+git apply "%~1"
+if errorlevel 1 (
+  echo Failed to apply Windows patch: %~nx1
+  exit /b 1
+)
+exit /b 0

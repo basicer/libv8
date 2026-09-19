@@ -1,0 +1,14 @@
+Adapted from ResurrectedTrader/v8-static-win, Invoke-SourcePatches.
+Source: https://github.com/ResurrectedTrader/v8-static-win/blob/6c2d8e9160f7f1fa8d30b5bd2087f732c5052238/build-v8.ps1
+
+--- a/src/objects/backing-store.cc
++++ b/src/objects/backing-store.cc
+@@ -323,7 +323,7 @@
+   // For accounting purposes, whether a GC was necessary.
+   bool did_retry = false;
+ 
+-  auto gc_retry = [&](const std::function<bool()>& fn) {
++  auto gc_retry = [&](auto&& fn) {
+     if (fn()) return true;
+     // Collect garbage and retry.
+     did_retry = true;
