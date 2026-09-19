@@ -32,6 +32,40 @@ runs:
 
         Write-Output "SCCACHE_DIR=$sccacheDir" | Out-File -FilePath "$Env:GITHUB_ENV" -Encoding utf8
 
+    - name: Select Windows SDK Required by V8
+      id: setup-windows-sdk
+      shell: pwsh
+      run: |
+        $sdkIncludeRoot = 'C:\Program Files (x86)\Windows Kits\10\Include'
+        if (-not (Test-Path $sdkIncludeRoot)) {
+          throw "Windows SDK include root was not found at $sdkIncludeRoot."
+        }
+
+        $availableSdkDirs = Get-ChildItem -Path $sdkIncludeRoot -Directory |
+          Where-Object {
+            $version = $null
+            [version]::TryParse($_.Name, [ref]$version)
+          } |
+          Sort-Object @{ Expression = { [version]$_.Name }; Descending = $true }
+        $sdk = $availableSdkDirs |
+          Where-Object { Test-Path (Join-Path $_.FullName 'um\stdio.h') } |
+          Select-Object -First 1
+
+        if (-not $sdk) {
+          $availableSdkVersions = Get-ChildItem -Path $sdkIncludeRoot -Directory | Select-Object -ExpandProperty Name
+          $foundVersions = if ($availableSdkVersions) { $availableSdkVersions -join ', ' } else { '(none)' }
+          throw "No usable Windows SDK was found under $sdkIncludeRoot. Expected a versioned Include directory containing um\stdio.h. Found: $foundVersions"
+        }
+
+        $sdkVersion = $sdk.Name
+        $sdkVersionForEnv = "$sdkVersion\"
+        $sdkRoot = (Split-Path -Path $sdkIncludeRoot -Parent) + '\'
+
+        Write-Host "Using Windows SDK $sdkVersion from $sdkRoot"
+        "WindowsSdkDir=$sdkRoot" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        "WindowsSDKVersion=$sdkVersionForEnv" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        "sdk-version=$sdkVersion" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
+
     - name: Download V8 Source
       shell: cmd
       run: .\v8_download.bat
@@ -46,6 +80,8 @@ runs:
 
     - name: Setup Developer Command Prompt
       uses: ilammy/msvc-dev-cmd@v1
+      with:
+        sdk: ${{ steps.setup-windows-sdk.outputs.sdk-version }}
 
     - name: Test V8
       shell: cmd
