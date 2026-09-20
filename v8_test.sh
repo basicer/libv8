@@ -25,11 +25,17 @@ fi
       -framework Security
   fi
 
-  link_with_platform() {
+  compile_with_libs() {
+    libs="$1"
+    shift
     "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
       "${dir}/v8/samples/hello-world.cc" -o hello_world \
-      -L"${dir}/v8/out/release/obj/" -lv8_monolith -lv8_libplatform \
+      -L"${dir}/v8/out/release/obj/" $libs \
       -pthread -std=c++20 -ldl "$@"
+  }
+
+  link_with_platform() {
+    compile_with_libs "-lv8_monolith -lv8_libplatform" "$@"
   }
 
   link_log="$(mktemp "${TMPDIR:-/tmp}/v8-link-platform.XXXXXX")"
@@ -40,10 +46,7 @@ fi
       grep -q "skipping incompatible" "$link_log" &&
       grep -q "libv8_libplatform.a" "$link_log" &&
       grep -q "cannot find -lv8_libplatform" "$link_log"; then
-      "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
-        "${dir}/v8/samples/hello-world.cc" -o hello_world \
-        -L"${dir}/v8/out/release/obj/" -lv8_monolith \
-        -pthread -std=c++20 -ldl "$@"
+      compile_with_libs "-lv8_monolith" "$@"
     else
       rm -f "$link_log"
       exit 1
