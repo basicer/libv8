@@ -61,6 +61,12 @@ runs:
           exit 0
         }
 
+        Write-Host 'Initializing winget package sources.'
+        winget list --id $requiredWindowsSdkId --exact --source winget --accept-source-agreements --disable-interactivity | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+          Write-Warning "winget source initialization exited with code $LASTEXITCODE. Continuing with SDK installation."
+        }
+
         Write-Host "Installing $requiredWindowsSdkId via winget because no usable Windows SDK is installed."
         winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity --silent
         $wingetExitCode = $LASTEXITCODE
