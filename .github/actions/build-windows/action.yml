@@ -90,7 +90,7 @@ runs:
           }
 
           $content = Get-Content -Path $file -Raw
-          $updated = $content -replace "(?m)^SDK_VERSION = '[^']+'$", "SDK_VERSION = '$Env:SDK_VERSION'"
+          $updated = $content -replace '(?m)^SDK_VERSION\s*=\s*[''"][^''"]+[''"]$', "SDK_VERSION = '$Env:SDK_VERSION'"
 
           if ($updated -eq $content) {
             throw "Failed to update SDK_VERSION in $file"
