@@ -37,14 +37,15 @@ fi
   }
 
   if ! link_err="$(link_with_platform 2>&1)"; then
-    printf "%s\n" "$link_err" >&2
     if [ "$(uname -s)" = "Linux" ] &&
       printf "%s\n" "$link_err" | grep -q "skipping incompatible" &&
       printf "%s\n" "$link_err" | grep -q "libv8_libplatform.a" &&
       printf "%s\n" "$link_err" | grep -q "cannot find -lv8_libplatform"; then
+      echo "Retrying link without -lv8_libplatform due to incompatible archive format." >&2
       compile_with_libs -lv8_monolith \
         -pthread -std=c++20 -ldl "$@" || exit 1
     else
+      printf "%s\n" "$link_err" >&2
       exit 1
     fi
   fi
