@@ -32,10 +32,99 @@ runs:
 
         Write-Output "SCCACHE_DIR=$sccacheDir" | Out-File -FilePath "$Env:GITHUB_ENV" -Encoding utf8
 
+    - name: Install Windows SDK Required by V8
+      shell: pwsh
+      run: |
+        $minimumWindowsSdkVersion = [version]'10.0.26100.0'
+
+        function Test-UsableWindowsSdk {
+          $sdkIncludeRoot = 'C:\Program Files (x86)\Windows Kits\10\Include'
+          if (-not (Test-Path $sdkIncludeRoot)) {
+            return $false
+          }
+
+          return [bool](Get-ChildItem -Path $sdkIncludeRoot -Directory |
+            Where-Object {
+              $version = $null
+              [version]::TryParse($_.Name, [ref]$version) -and $version -ge $minimumWindowsSdkVersion
+            } |
+            Where-Object {
+              (Test-Path (Join-Path $_.FullName 'ucrt\stdio.h')) -and
+              (Test-Path (Join-Path $_.FullName 'um\windows.h'))
+            } |
+            Select-Object -First 1)
+        }
+
+        $requiredWindowsSdkId = 'Microsoft.WindowsSDK.10.0.26100'
+        if (Test-UsableWindowsSdk) {
+          Write-Host 'A usable Windows SDK is already installed.'
+          exit 0
+        }
+
+        Write-Host 'Initializing winget package sources.'
+        winget list --id $requiredWindowsSdkId --exact --source winget --accept-source-agreements --disable-interactivity | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+          Write-Warning "winget source initialization exited with code $LASTEXITCODE. Continuing with SDK installation."
+        }
+
+        Write-Host "Installing $requiredWindowsSdkId via winget because no usable Windows SDK is installed."
+        winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity --silent
+        $wingetExitCode = $LASTEXITCODE
+        if ($wingetExitCode -ne 0) {
+          Write-Warning "winget exited with code $wingetExitCode while installing $requiredWindowsSdkId. Verifying SDK availability before failing."
+        }
+
+        $verificationScript = @'
+        $minimumWindowsSdkVersion = [version]'10.0.26100.0'
+        $sdkIncludeRoot = "C:\Program Files (x86)\Windows Kits\10\Include"
+        if (-not (Test-Path $sdkIncludeRoot)) {
+          exit 1
+        }
+
+        $sdk = Get-ChildItem -Path $sdkIncludeRoot -Directory |
+          Where-Object {
+            $version = $null
+            [version]::TryParse($_.Name, [ref]$version) -and $version -ge $minimumWindowsSdkVersion
+          } |
+          Where-Object {
+            (Test-Path (Join-Path $_.FullName "ucrt\stdio.h")) -and
+            (Test-Path (Join-Path $_.FullName "um\windows.h"))
+          } |
+          Select-Object -First 1
+
+        if ($sdk) {
+          exit 0
+        }
+
+        exit 1
+        '@
+        $sdkVerificationSucceeded = $false
+        for ($attempt = 1; $attempt -le 6; $attempt++) {
+          & pwsh -NoLogo -NoProfile -Command $verificationScript
+          if ($LASTEXITCODE -eq 0) {
+            $sdkVerificationSucceeded = $true
+            break
+          }
+
+          if ($attempt -lt 6) {
+            Write-Host "Windows SDK verification attempt $attempt failed; retrying in 10 seconds."
+            Start-Sleep -Seconds 10
+          }
+        }
+
+        if (-not $sdkVerificationSucceeded) {
+          if ($wingetExitCode -ne 0) {
+            throw "winget exited with code $wingetExitCode while installing $requiredWindowsSdkId, and a usable Windows SDK still was not found."
+          }
+
+          throw "winget installed $requiredWindowsSdkId, but a usable Windows SDK still was not found."
+        }
+
     - name: Select Windows SDK Required by V8
       id: setup-windows-sdk
       shell: pwsh
       run: |
+        $minimumWindowsSdkVersion = [version]'10.0.26100.0'
         $sdkIncludeRoot = 'C:\Program Files (x86)\Windows Kits\10\Include'
         if (-not (Test-Path $sdkIncludeRoot)) {
           throw "Windows SDK include root was not found at $sdkIncludeRoot."
@@ -44,7 +133,7 @@ runs:
         $availableSdkDirs = Get-ChildItem -Path $sdkIncludeRoot -Directory |
           Where-Object {
             $version = $null
-            [version]::TryParse($_.Name, [ref]$version)
+            [version]::TryParse($_.Name, [ref]$version) -and $version -ge $minimumWindowsSdkVersion
           } |
           Sort-Object @{ Expression = { [version]$_.Name }; Descending = $true }
         $sdk = $availableSdkDirs |
@@ -57,7 +146,7 @@ runs:
         if (-not $sdk) {
           $availableSdkVersions = Get-ChildItem -Path $sdkIncludeRoot -Directory | Select-Object -ExpandProperty Name
           $foundVersions = if ($availableSdkVersions) { $availableSdkVersions -join ', ' } else { '(none)' }
-          throw "No usable Windows SDK was found under $sdkIncludeRoot. Expected a versioned Include directory containing ucrt\stdio.h and um\windows.h. Found: $foundVersions"
+          throw "No usable Windows SDK was found under $sdkIncludeRoot. Expected a versioned Include directory at version $minimumWindowsSdkVersion or newer containing ucrt\stdio.h and um\windows.h. Found: $foundVersions"
         }
 
         $sdkVersion = $sdk.Name
