@@ -39,6 +39,10 @@ fi
   }
 
   link_log="$(mktemp "${TMPDIR:-/tmp}/v8-link-platform.XXXXXX")"
+  cleanup_link_log() {
+    rm -f "$link_log"
+  }
+  trap cleanup_link_log EXIT INT TERM
 
   if ! link_with_platform 2>"$link_log"; then
     cat "$link_log" >&2
@@ -46,17 +50,11 @@ fi
       grep -q "skipping incompatible" "$link_log" &&
       grep -q "libv8_libplatform.a" "$link_log" &&
       grep -q "cannot find -lv8_libplatform" "$link_log"; then
-      compile_with_libs "-lv8_monolith" "$@" || {
-        rm -f "$link_log"
-        exit 1
-      }
+      compile_with_libs "-lv8_monolith" "$@" || exit 1
     else
-      rm -f "$link_log"
       exit 1
     fi
   fi
-
-  rm -f "$link_log"
 )
 
 sh -c "./hello_world"
