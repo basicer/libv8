@@ -38,18 +38,12 @@ fi
     compile_with_libs "-lv8_monolith -lv8_libplatform" "$@"
   }
 
-  link_log="$(mktemp "${TMPDIR:-/tmp}/v8-link-platform.XXXXXX")"
-  cleanup_link_log() {
-    rm -f "$link_log"
-  }
-  trap cleanup_link_log EXIT INT TERM
-
-  if ! link_with_platform 2>"$link_log"; then
-    cat "$link_log" >&2
+  if ! link_err="$(link_with_platform 2>&1)"; then
+    printf "%s\n" "$link_err" >&2
     if [ "$(uname -s)" = "Linux" ] &&
-      grep -q "skipping incompatible" "$link_log" &&
-      grep -q "libv8_libplatform.a" "$link_log" &&
-      grep -q "cannot find -lv8_libplatform" "$link_log"; then
+      printf "%s\n" "$link_err" | grep -q "skipping incompatible" &&
+      printf "%s\n" "$link_err" | grep -q "libv8_libplatform.a" &&
+      printf "%s\n" "$link_err" | grep -q "cannot find -lv8_libplatform"; then
       compile_with_libs "-lv8_monolith" "$@" || exit 1
     else
       exit 1
