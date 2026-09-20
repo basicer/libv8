@@ -63,8 +63,9 @@ runs:
 
         Write-Host "Installing $requiredWindowsSdkId via winget because no usable Windows SDK is installed."
         winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity
-        if ($LASTEXITCODE -ne 0) {
-          throw "winget failed to install $requiredWindowsSdkId with exit code $LASTEXITCODE."
+        $wingetExitCode = $LASTEXITCODE
+        if ($wingetExitCode -ne 0) {
+          Write-Warning "winget exited with code $wingetExitCode while installing $requiredWindowsSdkId. Verifying SDK availability before failing."
         }
 
         $verificationScript = @'
@@ -93,6 +94,10 @@ runs:
         '@
         & pwsh -NoLogo -NoProfile -Command $verificationScript
         if ($LASTEXITCODE -ne 0) {
+          if ($wingetExitCode -ne 0) {
+            throw "winget exited with code $wingetExitCode while installing $requiredWindowsSdkId, and a usable Windows SDK still was not found."
+          }
+
           throw "winget installed $requiredWindowsSdkId, but a usable Windows SDK still was not found."
         }
 
