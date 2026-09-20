@@ -37,7 +37,8 @@ fi
   if ! link_with_platform 2>"$link_log"; then
     cat "$link_log" >&2
     if [ "$(uname -s)" = "Linux" ] &&
-      grep -q "skipping incompatible .*libv8_libplatform.a" "$link_log" &&
+      grep -q "skipping incompatible" "$link_log" &&
+      grep -q "libv8_libplatform.a" "$link_log" &&
       grep -q "cannot find -lv8_libplatform" "$link_log"; then
       "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
         "${dir}/v8/samples/hello-world.cc" -o hello_world \
