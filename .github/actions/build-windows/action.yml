@@ -63,6 +63,9 @@ runs:
 
         Write-Host "Installing $requiredWindowsSdkId via winget because no usable Windows SDK is installed."
         winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity
+        if ($LASTEXITCODE -ne 0) {
+          throw "winget failed to install $requiredWindowsSdkId with exit code $LASTEXITCODE."
+        }
 
         $verificationScript = @'
         $minimumWindowsSdkVersion = [version]'10.0.26100.0'
