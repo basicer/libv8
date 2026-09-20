@@ -32,6 +32,40 @@ runs:
 
         Write-Output "SCCACHE_DIR=$sccacheDir" | Out-File -FilePath "$Env:GITHUB_ENV" -Encoding utf8
 
+    - name: Install Windows SDK Required by V8
+      shell: pwsh
+      run: |
+        function Test-UsableWindowsSdk {
+          $sdkIncludeRoot = 'C:\Program Files (x86)\Windows Kits\10\Include'
+          if (-not (Test-Path $sdkIncludeRoot)) {
+            return $false
+          }
+
+          return [bool](Get-ChildItem -Path $sdkIncludeRoot -Directory |
+            Where-Object {
+              $version = $null
+              [version]::TryParse($_.Name, [ref]$version)
+            } |
+            Where-Object {
+              (Test-Path (Join-Path $_.FullName 'ucrt\stdio.h')) -and
+              (Test-Path (Join-Path $_.FullName 'um\windows.h'))
+            } |
+            Select-Object -First 1)
+        }
+
+        $requiredWindowsSdkId = 'Microsoft.WindowsSDK.10.0.26100'
+        if (Test-UsableWindowsSdk) {
+          Write-Host 'A usable Windows SDK is already installed.'
+          exit 0
+        }
+
+        Write-Host "Installing $requiredWindowsSdkId via winget because no usable Windows SDK is installed."
+        winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity
+
+        if (-not (Test-UsableWindowsSdk)) {
+          throw "winget installed $requiredWindowsSdkId, but a usable Windows SDK still was not found."
+        }
+
     - name: Select Windows SDK Required by V8
       id: setup-windows-sdk
       shell: pwsh
