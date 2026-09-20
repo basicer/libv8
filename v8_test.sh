@@ -32,7 +32,7 @@ fi
       -pthread -std=c++20 -ldl "$@"
   }
 
-  link_log="$(mktemp /tmp/v8-link-platform-XXXXXX.log)"
+  link_log="$(mktemp "${TMPDIR:-/tmp}/v8-link-platform.XXXXXX")"
 
   if ! link_with_platform 2>"$link_log"; then
     cat "$link_log" >&2
