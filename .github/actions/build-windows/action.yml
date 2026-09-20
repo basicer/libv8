@@ -62,7 +62,7 @@ runs:
         }
 
         Write-Host "Installing $requiredWindowsSdkId via winget because no usable Windows SDK is installed."
-        winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity
+        winget install --id $requiredWindowsSdkId --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity --silent
         $wingetExitCode = $LASTEXITCODE
         if ($wingetExitCode -ne 0) {
           Write-Warning "winget exited with code $wingetExitCode while installing $requiredWindowsSdkId. Verifying SDK availability before failing."
