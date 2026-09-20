@@ -19,6 +19,8 @@ if not exist "%depotToolsDir%" (
 
 set "DEPOT_TOOLS_DIR=%depotToolsDir%"
 set "DEPOT_TOOLS_WIN_TOOLCHAIN=0"
+set "INCLUDE="
+set "include="
 
 set "Path=%DEPOT_TOOLS_DIR%;%Path%"
 
