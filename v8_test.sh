@@ -26,16 +26,14 @@ fi
   fi
 
   compile_with_libs() {
-    libs="$1"
-    shift
     "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
       "${dir}/v8/samples/hello-world.cc" -o hello_world \
-      -L"${dir}/v8/out/release/obj/" $libs \
-      -pthread -std=c++20 -ldl "$@"
+      -L"${dir}/v8/out/release/obj/" "$@"
   }
 
   link_with_platform() {
-    compile_with_libs "-lv8_monolith -lv8_libplatform" "$@"
+    compile_with_libs -lv8_monolith -lv8_libplatform \
+      -pthread -std=c++20 -ldl "$@"
   }
 
   if ! link_err="$(link_with_platform 2>&1)"; then
@@ -44,7 +42,8 @@ fi
       printf "%s\n" "$link_err" | grep -q "skipping incompatible" &&
       printf "%s\n" "$link_err" | grep -q "libv8_libplatform.a" &&
       printf "%s\n" "$link_err" | grep -q "cannot find -lv8_libplatform"; then
-      compile_with_libs "-lv8_monolith" "$@" || exit 1
+      compile_with_libs -lv8_monolith \
+        -pthread -std=c++20 -ldl "$@" || exit 1
     else
       exit 1
     fi
