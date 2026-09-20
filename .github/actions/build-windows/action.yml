@@ -80,8 +80,7 @@ runs:
         SDK_VERSION: ${{ steps.setup-windows-sdk.outputs.sdk-version }}
       run: |
         $files = @(
-          '.\v8\build\toolchain\win\setup_toolchain.py',
-          '.\v8\build\vs_toolchain.py'
+          '.\v8\build\toolchain\win\setup_toolchain.py'
         )
 
         foreach ($file in $files) {
