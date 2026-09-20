@@ -95,7 +95,7 @@ runs:
             throw "Failed to update SDK_VERSION in $file"
           }
 
-          Set-Content -Path $file -Value $updated -NoNewline
+          [System.IO.File]::WriteAllText((Resolve-Path $file), $updated, [System.Text.UTF8Encoding]::new($false))
         }
 
     - name: Compile V8
