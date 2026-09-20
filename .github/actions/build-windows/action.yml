@@ -98,8 +98,21 @@ runs:
 
         exit 1
         '@
-        & pwsh -NoLogo -NoProfile -Command $verificationScript
-        if ($LASTEXITCODE -ne 0) {
+        $sdkVerificationSucceeded = $false
+        for ($attempt = 1; $attempt -le 6; $attempt++) {
+          & pwsh -NoLogo -NoProfile -Command $verificationScript
+          if ($LASTEXITCODE -eq 0) {
+            $sdkVerificationSucceeded = $true
+            break
+          }
+
+          if ($attempt -lt 6) {
+            Write-Host "Windows SDK verification attempt $attempt failed; retrying in 10 seconds."
+            Start-Sleep -Seconds 10
+          }
+        }
+
+        if (-not $sdkVerificationSucceeded) {
           if ($wingetExitCode -ne 0) {
             throw "winget exited with code $wingetExitCode while installing $requiredWindowsSdkId, and a usable Windows SDK still was not found."
           }
