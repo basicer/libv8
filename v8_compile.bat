@@ -55,6 +55,10 @@ set "gnArgs=%gnArgs% v8_target_cpu=""%targetCpu%"""
 
 pushd "%dir%\v8"
 
+if exist ".\out" (
+  rmdir /S /Q ".\out"
+)
+
 call gn gen ".\out\release" --args="%gnArgs%"
 if errorlevel 1 (
   echo Failed to generate build files.
