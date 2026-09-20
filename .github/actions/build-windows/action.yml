@@ -74,6 +74,31 @@ runs:
       shell: cmd
       run: .\v8_download.bat
 
+    - name: Align V8 Toolchain SDK Version
+      shell: pwsh
+      env:
+        SDK_VERSION: ${{ steps.setup-windows-sdk.outputs.sdk-version }}
+      run: |
+        $files = @(
+          '.\v8\build\toolchain\win\setup_toolchain.py',
+          '.\v8\build\vs_toolchain.py'
+        )
+
+        foreach ($file in $files) {
+          if (-not (Test-Path $file)) {
+            throw "Expected V8 toolchain file was not found: $file"
+          }
+
+          $content = Get-Content -Path $file -Raw
+          $updated = $content -replace "(?m)^SDK_VERSION = '[^']+'$", "SDK_VERSION = '$Env:SDK_VERSION'"
+
+          if ($updated -eq $content) {
+            throw "Failed to update SDK_VERSION in $file"
+          }
+
+          Set-Content -Path $file -Value $updated -NoNewline
+        }
+
     - name: Compile V8
       shell: cmd
       run: .\v8_compile.bat
