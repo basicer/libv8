@@ -27,7 +27,7 @@ fi
 
   "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
     "${dir}/v8/samples/hello-world.cc" -o hello_world \
-    -lv8_monolith -L"${dir}/v8/out/release/obj/" \
+    -L"${dir}/v8/out/release/obj/" -lv8_monolith -lv8_libplatform \
     -pthread -std=c++20 -ldl "$@"
 )
 

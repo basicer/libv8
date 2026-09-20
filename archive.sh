@@ -51,6 +51,7 @@ mkdir "$output_dir" || true
 
 cp -r "${dir}/v8/include" \
   "${dir}/v8/out/release/obj/libv8_monolith.a" \
+  "${dir}/v8/out/release/obj/libv8_libplatform.a" \
   "${dir}/gn-args_${os}.txt" \
   "$output_dir"
 
