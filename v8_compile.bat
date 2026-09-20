@@ -66,7 +66,7 @@ call gn args ".\out\release" --list > "%dir%\gn-args_%os%.txt"
 type "%dir%\gn-args_%os%.txt"
 echo ==================== Build args end ====================
 
-call ninja -C ".\out\release" -j %NUMBER_OF_PROCESSORS% v8_monolith
+call ninja -C ".\out\release" -j %NUMBER_OF_PROCESSORS% v8_monolith v8_libplatform
 if errorlevel 1 (
   echo Build failed.
   exit /b %errorlevel%

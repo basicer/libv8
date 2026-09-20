@@ -12,7 +12,8 @@ runs:
   using: "composite"
   steps:
     - name: Restore CCache
-      uses: actions/cache@v4
+      id: restore-ccache
+      uses: actions/cache/restore@v4
       with:
         path: .ccache
         key: ${{ runner.os }}-${{ runner.arch }}:libv8:ccache:${{ github.run_number }}
@@ -49,6 +50,13 @@ runs:
     - name: Show CCache Status
       shell: bash
       run: ccache -s
+
+    - name: Save CCache
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: .ccache
+        key: ${{ runner.os }}-${{ runner.arch }}:libv8:ccache:${{ github.run_number }}
 
     - name: Test V8
       shell: bash

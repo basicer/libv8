@@ -56,7 +56,7 @@ echo "==================== Build args end ===================="
 
 (
   set -x
-  ninja -C "./out/release" -j "$cores" v8_monolith
+  ninja -C "./out/release" -j "$cores" v8_monolith v8_libplatform
 )
 
 ls -lh ./out/release/obj/libv8_*.a
