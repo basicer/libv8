@@ -16,8 +16,9 @@ fi
   if [ "$(uname -s)" = "Linux" ]; then
     cxx="clang++"
   elif [ "$(uname -s)" = "Darwin" ]; then
-    cxx="$(xcrun --find clang++)"
-    set -- -stdlib=libc++ \
+    sdk_root="$(xcrun --sdk macosx --show-sdk-path)"
+    cxx="$(xcrun --sdk macosx --find clang++)"
+    set -- -isysroot "$sdk_root" -stdlib=libc++ \
       -framework CoreFoundation \
       -framework Foundation \
       -framework Security

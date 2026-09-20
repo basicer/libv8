@@ -48,6 +48,8 @@ gn_args="${gn_args} v8_target_cpu=\"$target_cpu\""
 
 cd "${dir}/v8"
 
+rm -rf "./out"
+
 gn gen "./out/release" --args="$gn_args"
 
 echo "==================== Build args start ===================="
