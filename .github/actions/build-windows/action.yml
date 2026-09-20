@@ -48,13 +48,16 @@ runs:
           } |
           Sort-Object @{ Expression = { [version]$_.Name }; Descending = $true }
         $sdk = $availableSdkDirs |
-          Where-Object { Test-Path (Join-Path $_.FullName 'um\stdio.h') } |
+          Where-Object {
+            (Test-Path (Join-Path $_.FullName 'ucrt\stdio.h')) -and
+            (Test-Path (Join-Path $_.FullName 'um\windows.h'))
+          } |
           Select-Object -First 1
 
         if (-not $sdk) {
           $availableSdkVersions = Get-ChildItem -Path $sdkIncludeRoot -Directory | Select-Object -ExpandProperty Name
           $foundVersions = if ($availableSdkVersions) { $availableSdkVersions -join ', ' } else { '(none)' }
-          throw "No usable Windows SDK was found under $sdkIncludeRoot. Expected a versioned Include directory containing um\stdio.h. Found: $foundVersions"
+          throw "No usable Windows SDK was found under $sdkIncludeRoot. Expected a versioned Include directory containing ucrt\stdio.h and um\windows.h. Found: $foundVersions"
         }
 
         $sdkVersion = $sdk.Name
