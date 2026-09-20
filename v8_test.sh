@@ -46,7 +46,10 @@ fi
       grep -q "skipping incompatible" "$link_log" &&
       grep -q "libv8_libplatform.a" "$link_log" &&
       grep -q "cannot find -lv8_libplatform" "$link_log"; then
-      compile_with_libs "-lv8_monolith" "$@"
+      compile_with_libs "-lv8_monolith" "$@" || {
+        rm -f "$link_log"
+        exit 1
+      }
     else
       rm -f "$link_log"
       exit 1
