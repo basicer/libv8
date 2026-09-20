@@ -25,10 +25,23 @@ fi
       -framework Security
   fi
 
-  "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
-    "${dir}/v8/samples/hello-world.cc" -o hello_world \
-    -L"${dir}/v8/out/release/obj/" -lv8_monolith -lv8_libplatform \
-    -pthread -std=c++20 -ldl "$@"
+  link_with_platform() {
+    "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
+      "${dir}/v8/samples/hello-world.cc" -o hello_world \
+      -L"${dir}/v8/out/release/obj/" -lv8_monolith -lv8_libplatform \
+      -pthread -std=c++20 -ldl "$@"
+  }
+
+  if ! link_with_platform; then
+    if [ "$(uname -s)" = "Linux" ]; then
+      "$cxx" -I"${dir}/v8" -I"${dir}/v8/include" \
+        "${dir}/v8/samples/hello-world.cc" -o hello_world \
+        -L"${dir}/v8/out/release/obj/" -lv8_monolith \
+        -pthread -std=c++20 -ldl "$@"
+    else
+      exit 1
+    fi
+  fi
 )
 
 sh -c "./hello_world"
